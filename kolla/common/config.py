@@ -509,6 +509,10 @@ SOURCES = {
         'type': 'url',
         'location': ('$tarballs_base/trove/'
                      'trove-master.tar.gz')},
+    'valence': {
+        'type': 'url',
+        'location': ('$tarballs_base/valence/'
+                     'valence-master.tar.gz')},
     'vitrage-base': {
         'type': 'url',
         'location': ('$tarballs_base/vitrage/'
@@ -766,6 +770,10 @@ USERS = {
     'redis-user': {
         'uid': 42460,
         'gid': 42460,
+    },
+    'valence-user': {
+        'uid': 42455,
+        'gid': 42455,
     },
 }
 

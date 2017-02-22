@@ -1,0 +1,66 @@
+FROM {{ namespace }}/{{ image_prefix }}openstack-base:{{ tag }}
+MAINTAINER {{ maintainer }}
+
+{% block valence_header %}{% endblock %}
+
+{% import "macros.j2" as macros with context %}
+
+{{ macros.configure_user(name='valence') }}
+
+
+
+{% if base_distro in ['centos', 'oraclelinux', 'rhel'] %}
+
+    {% set valence_packages = [
+            'httpd',
+            'mod_wsgi',
+            'gettext'
+    ] %}
+
+{{ macros.install_packages(valence_packages | customizable("packages")) }}
+
+{% block valence_redhat_source_setup %}
+RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf
+{% endblock %}
+
+{% elif base_distro in ['ubuntu', 'debian'] %}
+
+    {% set valence_packages = [
+            'apache2',
+            'libapache2-mod-wsgi',
+            'gettext'
+    ] %}
+
+{{ macros.install_packages(valence_packages | customizable("packages")) }}
+
+{% block valence_ubuntu_source_setup %}
+RUN echo > /etc/apache2/ports.conf \
+    && ln -s ../mods-available/headers.load  /etc/apache2/mods-enabled/headers.load
+{% endblock %}
+
+{% endif %}
+
+ADD valence-archive /valence-source
+ADD plugins-archive /
+
+{% set valence_pip_packages = [
+    '/valence'
+] %}
+
+{% set valence_plugins_pip_packages = [
+    '/plugins/*'
+] %}
+
+RUN ln -s valence-source/* valence \
+    && {{ macros.install_pip(valence_pip_packages | customizable("pip_packages")) }} \
+    && if [ "$(ls /plugins)" ]; then \
+           {{ macros.install_pip(valence_plugins_pip_packages) }}; \
+       fi \
+    && (cd /valence && ./install_valence.sh) \
+    && chown -R valence: /etc/valence
+
+
+CMD /usr/local/bin/valence
+
+{% block valence_footer %}{% endblock %}
+{% block footer %}{% endblock %}
